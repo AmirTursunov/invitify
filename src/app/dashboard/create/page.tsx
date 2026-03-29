@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowLeft, ArrowRight, Eye, Smartphone } from "lucide-react";
+import { Loader2, ArrowLeft, ArrowRight, Eye, Smartphone, Star } from "lucide-react";
 import Link from "next/link";
 import type { Template, TemplateFields, TemplateStyles } from "@/types";
 import { CATEGORY_LABELS } from "@/types";
@@ -106,6 +106,11 @@ export default function CreateInvitationPage() {
                   <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none scale-150 group-hover:rotate-12 transition-transform duration-700">
                     <div className="text-9xl font-black" style={{ color }}>{template.name?.charAt(0)}</div>
                   </div>
+                  {["WEDDING", "BIRTHDAY"].includes(template.category) && (
+                    <div className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider flex items-center gap-1 ring-2 ring-white/50 animate-pulse">
+                      <Star className="w-3 h-3 fill-white" /> OMMABOP
+                    </div>
+                  )}
                   <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold tracking-wider text-gray-600 shadow-sm border border-black/5">
                     {CATEGORY_LABELS[template.category] || template.category}
                   </div>
