@@ -148,10 +148,10 @@ export default async function HomePage() {
             <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
             O'zbekistondagi #1 raqamli taklifnoma platformasi
           </div>
-          <h1 className="text-[9vw] leading-tight sm:text-5xl md:text-7xl lg:text-8xl font-black text-gray-900 tracking-tight mb-8">
+          <h1 className="text-[11vw] sm:text-6xl md:text-7xl lg:text-8xl leading-[1.1] font-black text-gray-900 tracking-tight mb-8">
             Taklifnomangizni <br />
-            <span className="relative inline-block pb-2">
-              <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600">
+            <span className="relative inline-block pb-2 mt-2">
+              <span className="text-[8vw] sm:text-5xl md:text-6xl lg:text-7xl relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600">
                 mukammal qiling
               </span>
               <svg
