@@ -160,19 +160,26 @@ function InvitationEditor({ template, onSubmit, loading }: any) {
 
   // Set up default/sample values
   const defaultValues: Record<string, string> = { _title: "" };
+  const sampleData: Record<string, string> = {};
+
   Object.entries(fields as Record<string, any>).forEach(([key, f]) => {
     schemaObj[key] = f.required ? z.string().min(1, "Majburiy maydon") : z.string().optional();
     
+    defaultValues[key] = ""; // Form inputs start empty
+    
     // Fallback sample data to give an impressive preview
-    if (key.includes("Name") || key.includes("groom") || key.includes("bride")) defaultValues[key] = f.placeholder || "Azizbek";
-    if (key === "bride") defaultValues[key] = "Aziza";
-    if (key.includes("date")) defaultValues[key] = "2024-12-31";
-    if (key.includes("time")) defaultValues[key] = "18:00";
-    if (key.includes("venue")) defaultValues[key] = "Versal Restorani";
-    if (key.includes("address")) defaultValues[key] = "Toshkent shahri, Amir Temur ko'chasi 16";
-    if (key.includes("phone")) defaultValues[key] = "+998 90 123 45 67";
-    if (key.includes("message")) defaultValues[key] = "Sizlarni shodiyonamizda kutib qolamiz!";
-    if (key.includes("company")) defaultValues[key] = "Innovatsiya MChJ";
+    let sample = f.placeholder || "Kiriting...";
+    if (key.includes("Name") || key.includes("groom") || key.includes("bride")) sample = "Azizbek";
+    if (key === "bride") sample = "Aziza";
+    if (key.includes("date")) sample = "2024-12-31";
+    if (key.includes("time")) sample = "18:00";
+    if (key.includes("venue")) sample = "Versal Restorani";
+    if (key.includes("address")) sample = "Toshkent shahri, Amir Temur ko'chasi 16";
+    if (key.includes("phone")) sample = "+998 90 123 45 67";
+    if (key.includes("message")) sample = "Sizlarni shodiyonamizda kutib qolamiz!";
+    if (key.includes("company")) sample = "Innovatsiya MChJ";
+    
+    sampleData[key] = sample;
   });
   
   const schema = z.object(schemaObj);
@@ -182,11 +189,42 @@ function InvitationEditor({ template, onSubmit, loading }: any) {
   });
   
   const watchedData = useWatch({ control });
+  
+  const previewData = { ...sampleData };
+  if (watchedData) {
+    Object.keys(watchedData).forEach((key) => {
+      if (watchedData[key] !== undefined && watchedData[key] !== "") {
+        previewData[key] = watchedData[key];
+      }
+    });
+  }
+
+  const [activeTab, setActiveTab] = useState<"form" | "preview">("form");
 
   return (
     <>
+      {/* Mobile Tabs */}
+      <div className="w-full lg:hidden flex items-center justify-center shrink-0 mb-4 px-4">
+        <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full max-w-sm shadow-inner">
+          <button 
+            type="button"
+            onClick={() => setActiveTab("form")}
+            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${activeTab === "form" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Ma'lumotlar
+          </button>
+          <button 
+            type="button"
+            onClick={() => setActiveTab("preview")}
+            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${activeTab === "preview" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Ko'rish <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
+          </button>
+        </div>
+      </div>
+
       {/* Form Panel */}
-      <div className="w-full lg:w-[400px] xl:w-[450px] bg-white border border-gray-100 rounded-3xl p-6 overflow-y-auto shadow-sm shrink-0">
+      <div className={`w-full lg:w-[400px] xl:w-[450px] bg-white border border-gray-100 rounded-3xl p-6 overflow-y-auto shadow-sm flex-1 min-h-0 lg:flex-none lg:shrink-0 ${activeTab === "form" ? "block" : "hidden lg:block"}`}>
         <form id="invite-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5 pb-8">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Taklifnoma nomi (shaxsiy)</label>
@@ -210,7 +248,7 @@ function InvitationEditor({ template, onSubmit, loading }: any) {
               {field.type === "textarea" ? (
                 <textarea
                   {...register(key)}
-                  placeholder={field.placeholder || "Matinni kiriting..."}
+                  placeholder={field.placeholder || sampleData[key]}
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none bg-gray-50 focus:bg-white resize-none"
                 />
@@ -226,7 +264,7 @@ function InvitationEditor({ template, onSubmit, loading }: any) {
                 <input
                   type={field.type === "date" ? "date" : field.type === "time" ? "time" : "text"}
                   {...register(key)}
-                  placeholder={field.placeholder || "Kiriting..."}
+                  placeholder={field.placeholder || sampleData[key]}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none bg-gray-50 focus:bg-white"
                 />
               )}
@@ -251,7 +289,7 @@ function InvitationEditor({ template, onSubmit, loading }: any) {
       </div>
 
       {/* Preview Panel */}
-      <div className="hidden lg:flex flex-1 bg-gray-50/50 rounded-3xl items-center justify-center p-8 relative overflow-hidden border border-gray-200/50 shadow-[inset_0_0_40px_rgba(0,0,0,0.02)]">
+      <div className={`flex-1 bg-gray-50/50 rounded-3xl items-center justify-center p-4 lg:p-8 relative overflow-hidden border border-gray-200/50 shadow-[inset_0_0_40px_rgba(0,0,0,0.02)] ${activeTab === "preview" ? "flex" : "hidden lg:flex"}`}>
         {/* Phone Frame wrapper */}
         <div className="relative w-full max-w-[400px] aspect-[9/19.5] bg-black rounded-[3rem] p-3 shadow-2xl flex shrink-0 ring-1 ring-gray-900/5">
           {/* Top Notch/Dynamic Island */}
@@ -262,7 +300,7 @@ function InvitationEditor({ template, onSubmit, loading }: any) {
           {/* Inner Screen */}
           <div className="w-full h-full bg-white rounded-[2.2rem] overflow-hidden relative">
             <div className="w-full h-full overflow-y-auto no-scrollbar scroll-smooth">
-               <TemplateRenderer template={template} data={watchedData as any} />
+               <TemplateRenderer template={template} data={previewData as any} />
             </div>
           </div>
         </div>

@@ -1,10 +1,11 @@
 // src/app/templates/[slug]/page.tsx
-import { getDb } from "@/lib/mongodb"
+import { getDb, ObjectId } from "@/lib/mongodb"
 import { auth } from "@/lib/auth"
 import { notFound } from "next/navigation"
 import { CATEGORY_LABELS, type TemplateFields, type TemplateStyles } from "@/types"
 import Link from "next/link"
 import { Crown, Check, ArrowRight } from "lucide-react"
+import TemplateRenderer from "@/components/templates/TemplateRenderer"
 
 interface Props { params: Promise<{ slug: string }> }
 
@@ -21,72 +22,105 @@ export default async function TemplateDetailPage({ params }: Props) {
   const template = await db.collection("templates").findOne({ slug, isActive: true })
   if (!template) notFound()
 
+  // Serialize template for Client Components
+  const safeTemplate = {
+    ...template,
+    _id: template._id.toString(),
+    createdAt: template.createdAt?.toISOString(),
+    updatedAt: template.updatedAt?.toISOString(),
+  };
+
   const fields = template.fields as TemplateFields
-  const styles = template.styles as TemplateStyles
   const templateId = template._id.toString()
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid lg:grid-cols-2 gap-10">
-          <div>
-            <div className="rounded-2xl overflow-hidden aspect-[3/4] flex items-center justify-center relative shadow-xl"
-              style={{ background: `linear-gradient(135deg, ${styles.primaryColor}33, ${styles.primaryColor}66)`, backgroundColor: styles.bgColor }}>
-              <div className="text-center p-8 max-w-xs">
-                <div className="text-6xl font-bold mb-4" style={{ color: styles.primaryColor }}>{template.name.charAt(0)}</div>
-                <div className="space-y-2">
-                  {[32, 24, 28].map((w, i) => (
-                    <div key={i} className="h-2 rounded-full mx-auto opacity-20" style={{ background: styles.primaryColor, width: `${w * 3}px` }} />
-                  ))}
-                </div>
-              </div>
-              {template.isPremium && (
-                <div className="absolute top-4 right-4 bg-amber-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1">
-                  <Crown className="w-4 h-4" /> Premium
-                </div>
-              )}
-            </div>
-          </div>
+  // Generate beautiful sample data based on fields
+  const sampleData: Record<string, string> = { _title: "Namuna Taklifnoma" };
+  Object.entries(fields as Record<string, any>).forEach(([key, f]) => {
+    if (key.includes("Name") || key.includes("groom") || key.includes("bride")) sampleData[key] = f.placeholder || "Azizbek";
+    if (key === "bride") sampleData[key] = "Aziza";
+    if (key.includes("date")) sampleData[key] = "2024-12-31";
+    if (key.includes("time")) sampleData[key] = "18:00";
+    if (key.includes("venue")) sampleData[key] = "Yakkasaroy Restorani";
+    if (key.includes("address")) sampleData[key] = "Toshkent shahri, Yakkasaroy tumani 15";
+    if (key.includes("phone")) sampleData[key] = "+998 90 123 45 67";
+    if (key.includes("message")) sampleData[key] = "Sizlarni ushbu quvonchli kunimizda kutib qolamiz!";
+    if (key.includes("company")) sampleData[key] = "Innovatsiya MChJ";
+  });
 
-          <div className="flex flex-col">
-            <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium w-fit mb-4">
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 w-full flex-1">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+          
+          {/* Left Column: Form & Details */}
+          <div className="flex flex-col order-2 lg:order-1">
+            <div className="bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider w-fit mb-5">
               {CATEGORY_LABELS[template.category] || template.category}
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">{template.name}</h1>
-            {template.description && <p className="text-gray-500 mb-6">{template.description}</p>}
+            
+            <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">
+              {template.name}
+              {template.isPremium && <Crown className="inline-block w-8 h-8 text-amber-500 ml-3 mb-2" />}
+            </h1>
+            
+            {template.description && <p className="text-gray-500 text-lg mb-8 leading-relaxed">{template.description}</p>}
 
-            <div className="bg-white rounded-xl p-5 border border-gray-100 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl font-bold text-gray-900">
-                  {template.price === 0 ? "Bepul" : `${(template.price / 100).toLocaleString()} so'm`}
-                </span>
+            <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 mb-8 shadow-sm">
+              <div className="flex items-end justify-between mb-6 pb-6 border-b border-gray-100">
+                <div>
+                  <div className="text-sm text-gray-400 font-medium mb-1 uppercase tracking-wider">Shablon narxi</div>
+                  <span className="text-3xl md:text-4xl font-black text-gray-900">
+                    {template.price === 0 ? "Bepul" : `${(template.price / 100).toLocaleString()} so'm`}
+                  </span>
+                </div>
               </div>
-              <div className="space-y-2 mb-5">
-                {["Chiroyli dizayn", "Online ulashish havolasi", "QR kod", "Cheksiz ko'rishlar"].map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
-                    <Check className="w-4 h-4 text-green-500 shrink-0" />{item}
+              
+              <div className="grid sm:grid-cols-2 gap-3 mb-8">
+                {["Ajoyib zamonaviy dizayn", "Mobil va Web moslashuvchan", "QR kodli vizitka uslubi", "Cheksiz marta ulashish", "To'lovdan so'ng rasm ko'rinishida yuklash"].map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                    <div className="mt-0.5 bg-green-100 p-0.5 rounded-full"><Check className="w-3.5 h-3.5 text-green-600 shrink-0" /></div>
+                    {item}
                   </div>
                 ))}
               </div>
+              
               <Link href={session ? `/dashboard/create?template=${templateId}` : `/auth/login?redirect=/dashboard/create?template=${templateId}`}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold text-center flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-                {session ? "Shu shablon bilan boshlash" : "Kirish va boshlash"}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-2xl font-bold text-lg text-center flex items-center justify-center gap-2 hover:shadow-xl hover:scale-[1.02] transition-all active:scale-[0.98]">
+                {session ? "Shu shablon bilan boshlash" : "Kirish va taklifnoma yaratish"}
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
 
-            <div className="bg-white rounded-xl p-5 border border-gray-100">
-              <h3 className="font-semibold text-gray-700 mb-3 text-sm">Maydonlar ({Object.keys(fields).length} ta):</h3>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white/50 rounded-2xl p-6 border border-gray-100">
+              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="bg-purple-100 text-purple-700 w-6 h-6 rounded flex items-center justify-center text-xs">{Object.keys(fields).length}</span>
+                To'ldiriladigan maydonlar
+              </h3>
+              <div className="flex flex-wrap gap-2">
                 {Object.entries(fields).map(([key, field]) => (
-                  <div key={key} className="flex items-center gap-2 text-xs text-gray-500">
-                    <div className={`w-1.5 h-1.5 rounded-full ${field.required ? "bg-purple-500" : "bg-gray-300"}`} />
-                    {field.label}{field.required && <span className="text-red-400">*</span>}
+                  <div key={key} className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${field.required ? 'bg-white border-purple-200 text-purple-700' : 'bg-transparent border-gray-200 text-gray-500'}`}>
+                    {field.label} {field.required && <span className="text-red-400 ml-0.5">*</span>}
                   </div>
                 ))}
               </div>
             </div>
           </div>
+
+          {/* Right Column: Dynamic Realistic Template Preview */}
+          <div className="order-1 lg:order-2 flex justify-center lg:justify-end lg:sticky lg:top-8">
+             {/* Realistic Phone Frame */}
+             <div className="relative w-full max-w-[380px] aspect-[9/19.5] bg-gray-900 rounded-[3rem] p-3 shadow-2xl flex shrink-0 ring-1 ring-black/5 ring-offset-4 ring-offset-gray-50 transform transition duration-500 hover:scale-[1.02]">
+                <div className="absolute top-0 inset-x-0 h-7 flex justify-center z-50">
+                  <div className="w-[120px] h-[30px] bg-gray-900 rounded-b-3xl"></div>
+                </div>
+                <div className="w-full h-full bg-white rounded-[2.2rem] overflow-hidden relative">
+                  <div className="w-full h-full overflow-y-auto no-scrollbar scroll-smooth">
+                     <TemplateRenderer template={safeTemplate as any} data={sampleData} />
+                  </div>
+                </div>
+             </div>
+          </div>
+
         </div>
       </div>
     </div>

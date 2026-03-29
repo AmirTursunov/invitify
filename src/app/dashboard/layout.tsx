@@ -2,10 +2,8 @@
 import { auth, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import {
-  LayoutDashboard, PlusCircle, FileText, ShoppingBag,
-  LogOut, Sparkles, Settings,
-} from "lucide-react"
+import { LogOut, Sparkles } from "lucide-react"
+import { SidebarNav, MobileNav } from "./Navigation"
 
 export default async function DashboardLayout({
   children,
@@ -16,15 +14,6 @@ export default async function DashboardLayout({
   if (!session?.user) redirect("/auth/login?redirect=/dashboard")
 
   const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role as string)
-
-  const navItems = [
-    { href: "/dashboard", label: "Bosh sahifa", icon: LayoutDashboard },
-    { href: "/dashboard/create", label: "Yangi yaratish", icon: PlusCircle },
-    { href: "/dashboard/invitations", label: "Taklifnomalarim", icon: FileText },
-    { href: "/dashboard/orders", label: "Buyurtmalarim", icon: ShoppingBag },
-  ]
-
-  if (isAdmin) navItems.push({ href: "/admin", label: "Admin panel", icon: Settings })
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -50,18 +39,7 @@ export default async function DashboardLayout({
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors group"
-            >
-              <item.icon className="w-4 h-4 shrink-0 group-hover:text-purple-600" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <SidebarNav isAdmin={isAdmin} />
 
         <div className="p-4 border-t border-gray-100">
           <form
@@ -87,13 +65,7 @@ export default async function DashboardLayout({
             <Sparkles className="w-4 h-4" />
             Invitify
           </Link>
-          <div className="flex items-center gap-2">
-            {navItems.slice(0, 3).map((item) => (
-              <Link key={item.href} href={item.href} className="p-2 text-gray-500 hover:text-purple-600 transition-colors">
-                <item.icon className="w-5 h-5" />
-              </Link>
-            ))}
-          </div>
+          <MobileNav isAdmin={isAdmin} />
         </header>
         <div className="p-6">{children}</div>
       </main>
