@@ -13,15 +13,22 @@ export default async function InvitationsPage() {
   const db = await getDb()
 
   const invRaw = await db.collection("invitations").find({ userId }).sort({ createdAt: -1 }).toArray()
-  const templateIds = [...new Set(invRaw.map(i => i.templateId))]
-  const templates = await db.collection("templates").find({ _id: { $in: templateIds.map(id => { try { return new ObjectId(id) } catch { return null } }).filter(Boolean) } }).toArray()
+  const templateIds = [...new Set(invRaw.map(i => i.templateId))].filter(Boolean)
+  const templates = await db.collection("templates").find({ 
+    _id: { $in: templateIds.map(id => { try { return new ObjectId(id) } catch { return null } }).filter((id): id is ObjectId => id !== null) } 
+  }).toArray()
   const templateMap = Object.fromEntries(templates.map(t => [t._id.toString(), t]))
 
   const orderMap: Record<string, any> = {}
   const orders = await db.collection("orders").find({ invitationId: { $in: invRaw.map(i => i._id.toString()) } }).toArray()
   orders.forEach(o => { orderMap[o.invitationId] = o })
 
-  const invitations = invRaw.map(i => ({ ...i, id: i._id.toString(), template: templateMap[i.templateId], order: orderMap[i._id.toString()] || null }))
+  const invitations = invRaw.map(i => ({ 
+    ...i, 
+    id: i._id.toString(), 
+    template: templateMap[i.templateId], 
+    order: orderMap[i._id.toString()] || null 
+  })) as any[]
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -72,6 +79,9 @@ export default async function InvitationsPage() {
                           <Link href={`/invite/${inv.slug}`} target="_blank" className="text-xs flex items-center gap-1 text-purple-600 hover:underline">
                             <ExternalLink className="w-3.5 h-3.5" /> Ko'rish
                           </Link>
+                        )}
+                        {!["PAID", "ACTIVE"].includes(inv.status) && (
+                          <Link href={`/dashboard/invitations/${inv.id}/edit`} className="text-xs bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors text-purple-700 font-medium">O'zgartirish</Link>
                         )}
                         <Link href={`/dashboard/invitations/${inv.id}`} className="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors text-gray-600">Batafsil</Link>
                       </div>

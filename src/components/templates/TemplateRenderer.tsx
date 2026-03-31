@@ -1,3 +1,4 @@
+"use client";
 // src/components/templates/TemplateRenderer.tsx
 import React from "react";
 import type { Template, InvitationData } from "@/types";
@@ -10,22 +11,23 @@ export interface TemplateProps {
   template: Template;
   data: InvitationData;
   isView?: boolean;
+  onUpdate?: (field: string, value: string) => void;
 }
 
-export default function TemplateRenderer({ template, data, isView = false }: TemplateProps) {
+export default function TemplateRenderer({ template, data, isView = false, onUpdate }: TemplateProps) {
   const category = template.category;
 
   if (["WEDDING", "ENGAGEMENT", "ANNIVERSARY"].includes(category)) {
-    return <ElegantWeddingTemplate template={template} data={data} isView={isView} />;
+    return <ElegantWeddingTemplate template={template} data={data} isView={isView} onUpdate={onUpdate} />;
   }
 
   if (["MEETING", "CORPORATE", "CONFERENCE", "BUSINESS"].includes(category)) {
-    return <ModernEventTemplate template={template} data={data} isView={isView} />;
+    return <ModernEventTemplate template={template} data={data} isView={isView} onUpdate={onUpdate} />;
   }
 
   if (["BIRTHDAY", "BABY_SHOWER"].includes(category)) {
-    return <PlayfulBirthdayTemplate template={template} data={data} isView={isView} />;
+    return <PlayfulBirthdayTemplate template={template} data={data} isView={isView} onUpdate={onUpdate} />;
   }
 
-  return <DefaultTemplate template={template} data={data} isView={isView} />;
+  return <DefaultTemplate template={template} data={data} isView={isView} onUpdate={onUpdate} />;
 }

@@ -2,95 +2,193 @@
 import React from "react";
 import type { TemplateProps } from "./TemplateRenderer";
 import { Calendar, Clock, MapPin, Video, Phone } from "lucide-react";
+import EditableField from "../ui/EditableField";
 
-export default function ModernEventTemplate({ template, data, isView }: TemplateProps) {
+export default function ModernEventTemplate({
+  template,
+  data,
+  isView,
+  onUpdate,
+}: TemplateProps) {
   const styles = template.styles || {};
-  const primaryColor = styles.primaryColor || "#2563EB"; 
+  const primaryColor = styles.primaryColor || "#2563EB";
   const bgColor = styles.bgColor || "#F8FAFC";
   const textColor = styles.dark ? "#FFFFFF" : "#0F172A";
 
   return (
     <div
-      className={`relative w-full flex flex-col items-center ${isView ? "min-h-screen p-8" : "h-full py-8 px-4"}`}
+      className="relative w-full min-h-full flex flex-col items-center py-10 px-4"
       style={{ backgroundColor: bgColor, color: textColor }}
     >
-      {/* Abstract Background Design */}
-      <div 
-        className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-20 -mr-20 -mt-20 pointer-events-none"
+      {/* Abstract blobs */}
+      <div
+        className="absolute top-0 right-0 w-56 h-56 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 pointer-events-none"
         style={{ backgroundColor: primaryColor }}
       />
-      <div 
-        className="absolute bottom-0 left-0 w-48 h-48 rounded-full blur-3xl opacity-20 -ml-16 -mb-16 pointer-events-none"
+      <div
+        className="absolute bottom-0 left-0 w-44 h-44 rounded-full blur-3xl opacity-20 -ml-12 -mb-12 pointer-events-none"
         style={{ backgroundColor: primaryColor }}
       />
 
-      <div className="z-10 w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl relative">
+      <div className="z-10 w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl">
+        {/* Top accent bar */}
         <div className="h-2" style={{ backgroundColor: primaryColor }} />
-        
-        <div className="p-8">
-          {data.companyName && (
-            <div className="text-xs font-bold uppercase tracking-widest mb-6 opacity-60" style={{ color: primaryColor }}>
-              {data.companyName}
-            </div>
-          )}
-          
-          <h1 className="text-3xl font-extrabold leading-tight mb-4 tracking-tight">
-            {data.eventName || data.meetingTitle || "Corporate Event"}
-          </h1>
-          
-          {data.message && (
-            <p className="text-sm opacity-80 mb-6 border-l-2 pl-3" style={{ borderColor: primaryColor }}>
-              {data.message}
-            </p>
-          )}
 
-          <div className="space-y-4 my-8">
-            <EventRow icon={<Calendar size={18} color={primaryColor} />} label="Sana" value={data.date || data.startDate} />
-            {(data.time || data.duration) && (
-              <EventRow icon={<Clock size={18} color={primaryColor} />} label="Soat" value={`${data.time || ''} ${data.duration ? `(${data.duration})` : ''}`} />
-            )}
-            {data.venue && (
-              <EventRow icon={<MapPin size={18} color={primaryColor} />} label="Manzil" value={data.venue} subValue={data.address} />
-            )}
-            {data.meetingLink && (
-              <EventRow icon={<Video size={18} color={primaryColor} />} label="Havola" value={data.platform || "Online"} subValue={data.meetingLink} isLink />
-            )}
-            {data.phone && (
-              <EventRow icon={<Phone size={18} color={primaryColor} />} label="Aloqa" value={data.phone} />
-            )}
+        <div className="p-6">
+          <EditableField
+            value={(data.companyName as string) || ""}
+            onChange={(val) => onUpdate?.("companyName", val)}
+            isView={isView}
+            placeholder="Kompaniya nomi"
+            className="text-xs font-bold uppercase tracking-widest mb-4 opacity-60 block"
+            style={{ color: primaryColor }}
+          />
+
+          <EditableField
+            value={
+              (data.eventName as string) || (data.meetingTitle as string) || ""
+            }
+            onChange={(val) => onUpdate?.("eventName", val)}
+            isView={isView}
+            placeholder="Tadbir nomi"
+            className="text-2xl font-extrabold leading-tight mb-3 tracking-tight w-full block"
+          />
+
+          <EditableField
+            value={(data.message as string) || ""}
+            onChange={(val) => onUpdate?.("message", val)}
+            isView={isView}
+            placeholder="Tadbir haqida qisqacha ma'lumot"
+            className="text-sm opacity-80 mb-6 border-l-2 pl-3 block w-full leading-relaxed"
+            style={{ borderColor: primaryColor }}
+            multiline
+          />
+
+          <div className="space-y-4 my-6">
+            <EventRow
+              icon={<Calendar size={18} color={primaryColor} />}
+              label="Sana"
+              value={(data.date as string) || (data.startDate as string)}
+              onUpdate={onUpdate}
+              fieldKey="date"
+              isView={isView}
+            />
+            <EventRow
+              icon={<Clock size={18} color={primaryColor} />}
+              label="Soat"
+              value={(data.time as string) || ""}
+              subValue={data.duration as string}
+              onUpdate={onUpdate}
+              fieldKey="time"
+              subFieldKey="duration"
+              isView={isView}
+            />
+            <EventRow
+              icon={<MapPin size={18} color={primaryColor} />}
+              label="Manzil"
+              value={data.venue as string}
+              subValue={data.address as string}
+              onUpdate={onUpdate}
+              fieldKey="venue"
+              subFieldKey="address"
+              isView={isView}
+            />
+            <EventRow
+              icon={<Video size={18} color={primaryColor} />}
+              label="Havola"
+              value={(data.platform as string) || "Online"}
+              subValue={data.meetingLink as string}
+              isLink
+              onUpdate={onUpdate}
+              fieldKey="platform"
+              subFieldKey="meetingLink"
+              isView={isView}
+            />
+            <EventRow
+              icon={<Phone size={18} color={primaryColor} />}
+              label="Aloqa"
+              value={data.phone as string}
+              onUpdate={onUpdate}
+              fieldKey="phone"
+              isView={isView}
+            />
           </div>
-          
-          {data.contactPerson && (
-            <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
-              <div>
-                <div className="text-xs opacity-50 uppercase font-medium">Mas'ul shaxs</div>
-                <div className="font-semibold text-sm">{data.contactPerson}</div>
-              </div>
+
+          <div className="pt-4 border-t border-gray-100">
+            <div className="text-xs opacity-50 uppercase font-medium mb-1">
+              Mas'ul shaxs
             </div>
-          )}
+            <EditableField
+              value={(data.contactPerson as string) || ""}
+              onChange={(val) => onUpdate?.("contactPerson", val)}
+              isView={isView}
+              placeholder="Mas'ul shaxs ismi"
+              className="font-semibold text-sm w-full"
+            />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function EventRow({ icon, label, value, subValue, isLink }: any) {
-  if (!value) return null;
+function EventRow({
+  icon,
+  label,
+  value,
+  subValue,
+  isLink,
+  onUpdate,
+  fieldKey,
+  subFieldKey,
+  isView,
+}: any) {
   return (
-    <div className="flex items-start gap-4">
-      <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+    <div className="flex items-start gap-3">
+      <div className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
         {icon}
       </div>
-      <div>
-        <div className="text-xs font-medium opacity-50 capitalize">{label}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-xs font-medium opacity-50 capitalize mb-0.5">
+          {label}
+        </div>
         {isLink ? (
-          <a href={subValue} target="_blank" rel="noopener noreferrer" className="font-semibold text-sm text-blue-600 truncate block max-w-[200px]">
-            {value} Havolasi
-          </a>
+          <>
+            <EditableField
+              value={value || ""}
+              onChange={(val) => onUpdate?.(fieldKey, val)}
+              isView={isView}
+              placeholder="Platforma nomi"
+              className="font-semibold text-sm text-blue-600 block"
+            />
+            <EditableField
+              value={subValue || ""}
+              onChange={(val) => onUpdate?.(subFieldKey, val)}
+              isView={isView}
+              placeholder="https://..."
+              className="text-xs opacity-60 mt-0.5 text-blue-500 truncate block"
+            />
+          </>
         ) : (
-          <div className="font-semibold text-sm text-gray-800">{value}</div>
+          <>
+            <EditableField
+              value={value || ""}
+              onChange={(val) => onUpdate?.(fieldKey, val)}
+              isView={isView}
+              placeholder={label}
+              className="font-semibold text-sm text-gray-800 w-full"
+            />
+            {subFieldKey && (
+              <EditableField
+                value={subValue || ""}
+                onChange={(val) => onUpdate?.(subFieldKey, val)}
+                isView={isView}
+                placeholder="Qo'shimcha ma'lumot"
+                className="text-xs opacity-60 mt-0.5 block w-full"
+              />
+            )}
+          </>
         )}
-        {subValue && !isLink && <div className="text-xs opacity-60 mt-0.5">{subValue}</div>}
       </div>
     </div>
   );

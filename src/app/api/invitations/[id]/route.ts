@@ -1,58 +1,100 @@
 // src/app/api/invitations/[id]/route.ts
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { getDb, ObjectId } from "@/lib/mongodb"
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { getDb, ObjectId } from "@/lib/mongodb";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: "Kirish kerak" }, { status: 401 })
-  const { id } = await params
-  const db = await getDb()
+const updateSchema = z.object({
+  title: z.string().min(1, "Sarlavha kiriting").optional(),
+  data: z.record(z.any()).optional(),
+});
 
-  const inv = await db.collection("invitations").findOne({ _id: new ObjectId(id), userId: session.user.id })
-  if (!inv) return NextResponse.json({ error: "Topilmadi" }, { status: 404 })
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await auth();
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Kirish kerak" }, { status: 401 });
 
-  const [template, order] = await Promise.all([
-    db.collection("templates").findOne({ _id: new ObjectId(inv.templateId) }),
-    db.collection("orders").findOne({ invitationId: id }),
-  ])
+  const db = await getDb();
+  const invitation = await db.collection("invitations").findOne({
+    _id: new ObjectId(id),
+    userId: session.user.id,
+  });
+
+  if (!invitation)
+    return NextResponse.json({ error: "Topilmadi" }, { status: 404 });
 
   return NextResponse.json({
-    invitation: {
-      ...inv, id: inv._id.toString(), _id: undefined,
-      template: template ? { ...template, id: template._id.toString(), _id: undefined } : null,
-      order: order ? { ...order, id: order._id.toString(), _id: undefined } : null,
+    invitation: { ...invitation, id: invitation._id.toString(), _id: undefined },
+  });
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await auth();
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Kirish kerak" }, { status: 401 });
+
+  try {
+    const body = await request.json();
+    const { title, data } = updateSchema.parse(body);
+    const db = await getDb();
+
+    const invitation = await db.collection("invitations").findOne({
+      _id: new ObjectId(id),
+      userId: session.user.id,
+    });
+
+    if (!invitation)
+      return NextResponse.json({ error: "Topilmadi" }, { status: 404 });
+
+    // Prevent editing if already active/paid? 
+    // For now let's allow it, but usually business logic might restrict this.
+    
+    const updateData: any = { updatedAt: new Date() };
+    if (title) updateData.title = title;
+    if (data) {
+      // Merge data or replace? Usually for invitations we replace the whole data object
+      updateData.data = data;
     }
-  })
+
+    await db.collection("invitations").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
+    console.error(error);
+    return NextResponse.json({ error: "Xatolik yuz berdi" }, { status: 500 });
+  }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: "Kirish kerak" }, { status: 401 })
-  const { id } = await params
-  const db = await getDb()
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await auth();
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Kirish kerak" }, { status: 401 });
 
-  const existing = await db.collection("invitations").findOne({ _id: new ObjectId(id), userId: session.user.id })
-  if (!existing) return NextResponse.json({ error: "Topilmadi" }, { status: 404 })
+  const db = await getDb();
+  const result = await db.collection("invitations").deleteOne({
+    _id: new ObjectId(id),
+    userId: session.user.id,
+  });
 
-  const body = await request.json()
-  await db.collection("invitations").updateOne(
-    { _id: new ObjectId(id) },
-    { $set: { ...body, updatedAt: new Date() } }
-  )
-  return NextResponse.json({ success: true })
-}
+  if (result.deletedCount === 0)
+    return NextResponse.json({ error: "Topilmadi" }, { status: 404 });
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: "Kirish kerak" }, { status: 401 })
-  const { id } = await params
-  const db = await getDb()
-
-  const existing = await db.collection("invitations").findOne({ _id: new ObjectId(id), userId: session.user.id })
-  if (!existing) return NextResponse.json({ error: "Topilmadi" }, { status: 404 })
-  if (existing.status === "ACTIVE") return NextResponse.json({ error: "Faol taklifnomani o'chirish mumkin emas" }, { status: 403 })
-
-  await db.collection("invitations").deleteOne({ _id: new ObjectId(id) })
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true });
 }

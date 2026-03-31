@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, use } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -8,10 +8,11 @@ import { Loader2, Eye, EyeOff, Sparkles } from "lucide-react";
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { redirect?: string };
+  searchParams: Promise<{ redirect?: string }>;
 }) {
   const router = useRouter();
-  const redirect = searchParams?.redirect || "/";
+  const params = use(searchParams);
+  const redirect = params?.redirect || "/";
 
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -147,7 +148,7 @@ export default function LoginPage({
                   {showPass ? (
                     <EyeOff className="w-4 h-4" />
                   ) : (
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h4" />
                   )}
                 </button>
               </div>

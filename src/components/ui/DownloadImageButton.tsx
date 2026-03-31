@@ -27,7 +27,7 @@ export default function DownloadImageButton({
       
       const dataUrl = await htmlToImage.toJpeg(printRef.current, { 
         quality: 1, 
-        pixelRatio: 2, // High resolution
+        pixelRatio: 3, // Very high resolution but based on mobile layout dimensions
         backgroundColor: template?.styles?.bgColor || '#ffffff'
       });
       
@@ -88,8 +88,8 @@ export default function DownloadImageButton({
       <div className="overflow-hidden h-0 w-0 absolute top-[-9999px] left-[-9999px]">
         <div 
           ref={printRef} 
-          // Set a fixed mobile-like aspect ratio but large scale (e.g. 1080x1920) for high quality image
-          className="w-[1080px] h-[1920px] bg-white flex flex-col justify-center overflow-hidden" 
+          // Set a normal mobile aspect ratio (e.g. 400x850) to prevent items from scaling wildly, but pixelRatio: 3 makes it 1200x2550 HD image
+          className="w-[400px] min-h-[866px] bg-white flex flex-col justify-center overflow-hidden" 
         >
            <TemplateRenderer template={template} data={data} isView={true} />
         </div>
